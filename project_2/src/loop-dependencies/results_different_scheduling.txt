@@ -1,0 +1,45 @@
+Number of threads: 8  
+  
+  double Sn_local = Sn;
+  int k = 0, n = 0;
+#pragma omp parallel for default(none) firstprivate(Sn_local, k) lastprivate(Sn) shared(n, opt, up, N)
+  for (n = 0; n <= N; ++n)
+  {
+    if (k == 0)
+    {
+      Sn_local = (n==0) ? Sn : pow(Sn_local, n * up);
+      k = 1;
+    }
+
+    opt[n] = Sn_local;
+    Sn_local *= up;
+    Sn = Sn_local;
+  }
+
+#pragma omp parallel for default(none) firstprivate(Sn_local, k) lastprivate(Sn) shared(n, opt, up, N) schedule(dynamic, 150000)
+  ➜  loop-dependencies git:(main) ✗ ./recur_omp
+Parallel RunTime   :  3.442832 seconds
+Final Result Sn    :  485165097.62503743 
+Result ||opt||^2_2 :  5884629305179458.000000
+
+#pragma omp parallel for default(none) firstprivate(Sn_local, k) lastprivate(Sn) shared(n, opt, up, N) schedule(static)
+➜  loop-dependencies git:(main) ✗ ./recur_omp
+Parallel RunTime   :  3.246387 seconds
+Final Result Sn    :  485165097.62503743 
+Result ||opt||^2_2 :  5884629305179458.000000
+
+
+#pragma omp parallel for default(none) firstprivate(Sn_local, k) lastprivate(Sn) shared(n, opt, up, N) schedule(auto)
+Parallel RunTime   :  3.305259 seconds
+Final Result Sn    :  485165097.62503743 
+Result ||opt||^2_2 :  5884629305179458.000000
+
+#pragma omp parallel for default(none) firstprivate(Sn_local, k) lastprivate(Sn) shared(n, opt, up, N) schedule(guided, 150000)
+Parallel RunTime   :  3.538744 seconds
+Final Result Sn    :  485165097.62503743 
+Result ||opt||^2_2 :  5884629305179458.000000
+
+SEQUENTIAL:
+./recur_seq 
+Sequential RunTime :  4.205177 seconds
+Final Result Sn    :  485165097.62511122 
